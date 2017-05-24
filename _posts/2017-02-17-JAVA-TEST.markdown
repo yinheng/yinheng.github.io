@@ -1,0 +1,247 @@
+---
+layout:     post
+title:      "Java练习与示范"
+date:       2017-2-17 10:53:54 +0800
+author:     "nick"
+published:  true
+categories: Java
+---
+
+## 文件批量重命名
+
+> 根据输入的目标文件夹，首先列出该目录下所有子文件，然后遍历进行rename。
+
+<!-- more -->
+
+示范代码：
+
+```java
+public static void main(String[] args) {
+        renameFilesInBatch("D:test", "Test-", ".tt");
+    }
+
+    /**
+     * @param dirPath    目标文件夹路径
+     * @param namePrefix 名字前缀
+     * @param nameSubfix 名字后缀
+     * @return true成功，false失败
+     */
+    public static boolean renameFilesInBatch(String dirPath, 
+                                          String namePrefix, String nameSubfix) {
+        File dir = new File(dirPath);
+        if (!dir.exists()) {
+            return false; //文件夹不存在。
+        }
+
+        File[] subFiles = dir.listFiles(); //列出子文件
+        // String[] subFilesPath = dir.list(); 也可以列出子文件路径
+
+        if (subFiles == null || subFiles.length == 0) {
+            return false; // 没有子文件夹。
+        }
+
+        for (int i = 0; i < subFiles.length; i++) {
+            File subFile = subFiles[i]; // 取子文件
+
+            // 拼接目标路径。 
+            // 例如: 子文件路径为 D:test/hello.txt 最终拼成 D:test/前缀i后缀
+            // 其中: "File.separator"是表述路径的分割线（File里面的静态常量），
+            // 也可以直接用"/"代替。
+            // getParentFile() 用来获取上层目录。
+            File destFile = new File(subFile.getParentFile().getPath() + File.separator
+                    + (namePrefix + i + nameSubfix));
+
+            subFile.renameTo(destFile);
+        }
+
+        return true;
+    }
+```
+
+
+
+## 批量替换文件文本内容
+
+> 输入文件路径，要替换的文本，以及新文本。
+
+实现思路：
+1. 检查文件是否合法（存在，是文件，可写入）。
+2. 创建临时文件，打开源文件读写流，循环读取每一行，把每一行的文本替换，再把每一行写入临时文件。
+3. 最后把临时文件命名成目标文件。
+
+示范代码：
+```java
+
+    static boolean replace(File targetFile, String toPlace, String replaceTo) {
+        // 1. 检查文件是否合法（存在，是文件，可写入）。
+        boolean isValid = targetFile.exists() && targetFile.isFile() && targetFile.canWrite();
+        if (!isValid) {
+            log("Not exists~");
+            return false;
+        }
+
+        // 2. 创建临时文件，打开源文件读写流，循环读取每一行，把每一行的文本替换，再把每一行写入临时文件。
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(targetFile));
+            // 创建临时文件。
+            String tmpPath = targetFile.getParent() + File.separator + UUID.randomUUID().toString();
+            BufferedWriter bw = new BufferedWriter(new FileWriter(tmpPath));
+
+            String line = null;
+            // 循环读取每一行，并且追加到Buffer。
+            while ((line = br.readLine()) != null) {
+                String newLine = line.replace(toPlace, replaceTo); // 替换文本。
+                log("New line:" + newLine);
+                // 写到临时文件。
+                bw.write(newLine);
+                bw.newLine();
+            }
+
+            br.close();
+            bw.flush();
+
+            // 最后把临时文件命名成目标文件。
+            targetFile.delete();
+            new File(tmpPath).renameTo(targetFile);
+
+            log("Success");
+
+            return true;
+
+        } catch (FileNotFoundException e) {
+            log("Error:" + e.getLocalizedMessage());
+            return false;
+        } catch (IOException e) {
+            log("Error:" + e.getLocalizedMessage());
+            return false;
+        }
+
+    }
+```
+
+## 文件搜索:+1:
+
+> 根据输入的目录，搜索该目录下（包括子文件夹）文明名为XXX的所有文件，并且将搜索到的文件的路径打印出来。
+
+实现思路：
+1. 判断输入目录有效性。
+2. 遍历当前目录下所有子文件。
+3. 如果该文件是文件类型，判断文件名是不是符合要求。
+4. 如果是文件夹，递归。
+5. 汇总，打印。
+
+实现：
+```java
+public void searchFile(String path, String filename) {
+        File files = new File(path);
+        if (!files.exists() || files.isFile()) {
+            System.out.println("file not found");
+            return;
+        }
+
+        if (files.isDirectory()) {
+            File listfiles[] = files.listFiles();
+            for (int i = 0; i < listfiles.length; i++) {
+                File f = listfiles[i];
+                System.out.println("Checking:" + f);
+                if (f.isFile()) {
+                    String filesname = f.getName();
+                    System.out.println("filesmane:" + filesname);
+                    if (filesname.equalsIgnoreCase(filename)) {
+                        System.out.println("-------------------" + f);
+                    }
+                } else {
+                    searchFile(listfiles[i].getAbsolutePath(), filename);
+                }
+
+            }
+        }
+    }
+```
+
+## 文件内容搜索
+
+> 根据输入的目录，搜索该目录下（包括子文件夹）文件内容包含XXX字符串的文件。并且将搜索到的文件的路径以及包含该字符串的行号打印出来。
+
+实现思路：
+1. 判断输入目录有效性。
+2. 遍历当前目录下所有子文件。
+3. 如果该文件是文件类型，读取文件内容，判断是否含有该字符串。
+4. 如果是文件夹，递归。
+5. 汇总，打印。
+
+实现:
+```java
+public void searchFileContent(String path, String str) {
+        File file = new File(path);
+        if(!file.exists()) {
+            System.out.println("file not found");
+        }else {
+            File filename[] = file.listFiles();
+            for(int i = 0; i <filename.length; i ++ ) {
+                File f = filename[i];
+                System.out.println(f);
+                if(f.isFile() && f.canRead()) {
+                    try {
+                        BufferedReader br = new BufferedReader(new FileReader(f.getPath()));
+                        String s = null;
+                        int n = 1;
+                        while ((s = br.readLine()) != null) {
+                            n ++;
+                            if(s.contains(str)) {
+                                System.out.println("文件路径是：" + f.getPath());
+                                System.out.println("包含字符串的行号是：" +  n);
+                            }
+                        }
+                    }catch(Exception e){
+                        e.printStackTrace();
+                    }
+                }
+                if(f.isDirectory()) {
+                    searchFileContent(f.getPath(), str);
+                }
+            }
+        }
+    }
+```
+
+## 编程实现文件拷贝
+
+> 输入源文件路径，目的路径。
+
+```java
+public void fileCopy(String spath, String dpath) {
+        try {
+            FileInputStream fis = new FileInputStream(spath);
+            FileOutputStream fos = new FileOutputStream(dpath);
+            int totalByte = fis.available();
+            int read = 0;
+            int n = 0;
+            byte[] buffer = new byte[4096];
+            while ((n = fis.read(buffer)) != -1) {
+                fos.write(buffer, 0, n);
+                fos.flush();
+                read += n;
+                float per = (float) read / (float) totalByte;
+                System.out.println((per * 100) + "%");
+            }
+
+            fos.close();
+            fis.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+```
+
+## 统计JAVA代码行数
+
+> 根据输入的目录，统计该目录下（包括子文件夹）JAVA文件的总代码行数（空格也算）。
+
+实现思路：
+1. 判断输入目录有效性。
+2. 遍历当前目录下所有子文件。
+3. 如果该文件是文件类型，读取文件内容，行数递增。
+4. 如果是文件夹，递归。
+5. 汇总，打印。
