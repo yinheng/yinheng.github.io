@@ -1,29 +1,38 @@
-baseurl: "" # The subpath of your site. Use "" if you're hosting a blog at the root level.
-url: "http://ellekasai.github.io" # the base hostname & protocol for your site
-title: "Yinheng"
+# Site settings
+title: Hello world~
+url: "http://yinheng.github.io"    # the protocol and hostname of your site, eg. `http://laobubu.github.io`
+baseurl: "" # the prefix of your site uri, eg. `/jekyll-theme-EasyBook` or just one slash `/`
+#timezone: Asia/Chongqing
+description: >
+  Hello, world.
 
-# This is used by feed.xml. Uncomment if you want to use it.
-description: "Hello world~"
+# Your information
+email: yinheng@life.com
+author: Yinheng
+avatar: "https://raw.githubusercontent.com/Tornaco/DataMigration/master/private-data/profile5.jpg"
+profile: ":sunglasses::smirk::see_no_evil::basketball:"
+#twitter_username: twitter_username
+github_username:  Yinheng
 
+# Comment Service (Disqus or 多说)
+#  choose one and un-comment the line to active it
+#disqus_shortname: xxx   # get one: https://disqus.com/admin/signup/
+#duoshuo_shortname: xxx  # get one: http://duoshuo.com/create-site/
+
+excerpt_separator:  '<!-- more -->'
+permalink: /archivers/:title
 gems:
-  - jemoji
-exclude:
-  - "README.md"
-  - "CHANGELOG.md"
-  - "CNAME"
-  - "Gemfile"
-  - "Gemfile.lock"
-permalink: :title
-defaults:
-  -
-    scope:
-      path: ""
-      type: "pages"
-    values:
-      layout: "default"
-  -
-    scope:
-      path: ""
-      type: "posts"
-    values:
-      layout: "post"
+ - jekyll-paginate
+ - jekyll-gist
+ - jemoji
+
+# Build settings
+paginate: 8
+paginate_path: "page:num"
+
+highlighter: rouge
+markdown: kramdown
+
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
